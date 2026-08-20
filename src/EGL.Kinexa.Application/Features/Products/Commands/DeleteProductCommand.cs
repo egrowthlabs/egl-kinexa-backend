@@ -32,6 +32,7 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand,
         product.IsDeleted = true;
         product.DateDeleted = DateTime.UtcNow;
         product.DeletedBy = _currentUserService.UserId;
+        product.Slug = $"deleted-{product.Id}-{product.Slug}"; // Free slug for reuse
 
         _unitOfWork.Products.SoftDelete(product);
         await _unitOfWork.SaveAsync(cancellationToken);

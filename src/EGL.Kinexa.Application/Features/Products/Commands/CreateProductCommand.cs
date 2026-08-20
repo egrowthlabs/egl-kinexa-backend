@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EGL.Kinexa.Application.Common;
@@ -41,10 +43,21 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
     public async Task<ApiResponse<ProductDto>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
+        // Generate unique slug (handle conflicts with counter suffix)
+        var baseSlug = SlugHelper.GenerateSlug(request.Name);
+        var slug = baseSlug;
+        var counter = 2;
+        var existingSlugs = await _unitOfWork.Products.GetAllAsync();
+        var takenSlugs = new HashSet<string>(existingSlugs.Select(p => p.Slug));
+        while (takenSlugs.Contains(slug))
+        {
+            slug = $"{baseSlug}-{counter++}";
+        }
+
         var product = new Product
         {
             Name = request.Name,
-            Slug = SlugHelper.GenerateSlug(request.Name),
+            Slug = slug,
             Description = request.Description,
             CategoryId = request.CategoryId,
             MedicalBranchId = request.MedicalBranchId,
