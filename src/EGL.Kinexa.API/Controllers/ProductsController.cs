@@ -94,14 +94,13 @@ public class ProductsController : BaseController
     [HttpPost("fix-deleted-slugs")]
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> FixDeletedSlugs(
-        [FromServices] EGL.Kinexa.Application.Interfaces.IUnitOfWork unitOfWork,
+        [FromServices] EGL.Kinexa.Persistence.Context.KinexaDbContext db,
         CancellationToken ct)
     {
-        var all = await unitOfWork.Products.GetAllAsync();
-        var deleted = all.Where(p => p.IsDeleted && !p.Slug.StartsWith("deleted-")).ToList();
-        foreach (var p in deleted)
-            p.Slug = $"deleted-{p.Id}-{p.Slug}";
-        await unitOfWork.SaveAsync(ct);
-        return Ok(new { fixed_count = deleted.Count, message = $"Fixed {deleted.Count} soft-deleted product slugs." });
+        // Raw SQL to bypass global query filter and fix all soft-deleted slugs
+        var affected = await db.Database.ExecuteSqlRawAsync(
+            "UPDATE \"Products\" SET \"Slug\" = CONCAT('deleted-', \"Id\", '-', \"Slug\") WHERE \"IsDeleted\" = true AND \"Slug\" NOT LIKE 'deleted-%'",
+            ct);
+        return Ok(new { fixed_count = affected, message = $"Fixed {affected} soft-deleted product slugs." });
     }
 }
