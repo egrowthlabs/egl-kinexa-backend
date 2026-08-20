@@ -48,7 +48,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         var slug = baseSlug;
         var counter = 2;
         var existingSlugs = await _unitOfWork.Products.GetAllAsync();
-        var takenSlugs = new HashSet<string>(existingSlugs.Select(p => p.Slug));
+        var takenSlugs = new HashSet<string>(existingSlugs.Where(p => !p.IsDeleted).Select(p => p.Slug));
         while (takenSlugs.Contains(slug))
         {
             slug = $"{baseSlug}-{counter++}";
