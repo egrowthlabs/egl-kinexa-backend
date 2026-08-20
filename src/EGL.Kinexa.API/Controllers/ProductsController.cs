@@ -89,4 +89,19 @@ public class ProductsController : BaseController
         workbook.SaveAs(stream);
         return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "plantilla_productos_kinexa.xlsx");
     }
+
+    /// <summary>Admin: Fix slugs of soft-deleted products so they can be reused</summary>
+    [HttpPost("fix-deleted-slugs")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> FixDeletedSlugs(
+        [FromServices] EGL.Kinexa.Application.Interfaces.IUnitOfWork unitOfWork,
+        CancellationToken ct)
+    {
+        var all = await unitOfWork.Products.GetAllAsync();
+        var deleted = all.Where(p => p.IsDeleted && !p.Slug.StartsWith("deleted-")).ToList();
+        foreach (var p in deleted)
+            p.Slug = $"deleted-{p.Id}-{p.Slug}";
+        await unitOfWork.SaveAsync(ct);
+        return Ok(new { fixed_count = deleted.Count, message = $"Fixed {deleted.Count} soft-deleted product slugs." });
+    }
 }
