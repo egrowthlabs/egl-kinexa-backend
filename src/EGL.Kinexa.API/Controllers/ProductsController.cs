@@ -3,6 +3,7 @@ using EGL.Kinexa.Application.Features.Products.Commands;
 using EGL.Kinexa.Application.Features.Products.Queries;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 using System.IO;
 
